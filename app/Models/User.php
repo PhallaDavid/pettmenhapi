@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -24,6 +25,9 @@ class User extends Authenticatable
         'password',
         'avatar',
         'active',
+        'phone',
+        'address',
+        'preferences',
     ];
 
     /**
@@ -43,5 +47,34 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'preferences' => 'array',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['avatar_url'];
+
+    /**
+     * Get the user's avatar with full URL.
+     *
+     * @param  string|null  $value
+     * @return string|null
+     */
+    public function getAvatarAttribute($value)
+    {
+        return $value ? asset(Storage::url($value)) : null;
+    }
+
+    /**
+     * Get the full URL for the user's avatar (alias for avatar).
+     *
+     * @return string|null
+     */
+    public function getAvatarUrlAttribute()
+    {
+        return $this->avatar;
+    }
 }

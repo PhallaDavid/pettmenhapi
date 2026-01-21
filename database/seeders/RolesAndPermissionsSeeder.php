@@ -36,8 +36,8 @@ class RolesAndPermissionsSeeder extends Seeder
         // Create Super Admin User
         $adminFn = \App\Models\User::create([
             'name' => 'Super Admin',
-            'email' => 'superadmin@example.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'email' => 'david@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
             'active' => true,
         ]);
         $adminFn->assignRole($superAdmin);

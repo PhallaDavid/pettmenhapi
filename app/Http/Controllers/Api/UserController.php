@@ -12,8 +12,8 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->paginate(10);
-        return response()->json($users);
+        $users = User::with(['roles', 'permissions'])->paginate(10);
+        return response()->json($users, 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function store(Request $request)
@@ -24,7 +24,9 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|exists:roles,name',
             'active' => 'boolean',
-            'avatar' => 'nullable|image|max:2048', // Allow image upload
+            'avatar' => 'nullable|image|max:2048',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
         ]);
 
         $avatarPath = null;
@@ -36,21 +38,29 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'active' => $request->active ?? true, // Default to true if not sent
+            'active' => $request->active ?? true,
             'avatar' => $avatarPath,
+            'phone' => $request->phone,
+            'address' => $request->address,
         ]);
 
         $user->assignRole($request->role);
 
         return response()->json([
+            'success' => true,
             'message' => 'User created successfully',
-            'user' => $user->load('roles')
-        ], 201);
+            'user' => $user->load('roles', 'permissions'),
+            'domain' => url('/'),
+        ], 201, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function show(User $user)
     {
-        return response()->json($user->load('roles'));
+        return response()->json([
+            'success' => true,
+            'user' => $user->load('roles', 'permissions'),
+            'domain' => url('/'),
+        ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function update(Request $request, User $user)
@@ -61,6 +71,8 @@ class UserController extends Controller
             'role' => 'sometimes|exists:roles,name',
             'active' => 'sometimes|boolean',
             'avatar' => 'nullable|image|max:2048',
+            'phone' => 'sometimes|nullable|string|max:20',
+            'address' => 'sometimes|nullable|string',
         ]);
 
         if ($request->hasFile('avatar')) {
@@ -71,7 +83,7 @@ class UserController extends Controller
             $user->avatar = $request->file('avatar')->store('avatars', 'public');
         }
 
-        $user->fill($request->only(['name', 'email', 'active']));
+        $user->fill($request->only(['name', 'email', 'active', 'phone', 'address']));
         
         if ($request->filled('password')) {
              $request->validate(['password' => 'string|min:8']);
@@ -85,9 +97,11 @@ class UserController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'User updated successfully',
-            'user' => $user->load('roles')
-        ]);
+            'user' => $user->load('roles', 'permissions'),
+            'domain' => url('/'),
+        ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function destroy(User $user)

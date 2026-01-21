@@ -25,7 +25,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User CRUD (Admin)
     Route::apiResource('users', App\Http\Controllers\Api\UserController::class);
+    Route::post('users/{user}', [App\Http\Controllers\Api\UserController::class, 'update']);
+    
+    // Patients Management
+    Route::apiResource('patients', App\Http\Controllers\Api\PatientController::class);
+    Route::get('/dashboard/stats', [App\Http\Controllers\Api\DashboardController::class, 'stats']);
+    
+    // User Settings & Profile
+    Route::post('/user/preferences', [App\Http\Controllers\Api\DashboardController::class, 'updatePreferences']);
     Route::get('/profile', [App\Http\Controllers\Api\AuthController::class, 'profile']);
+    Route::post('/profile', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
+    Route::put('/change-password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
 
     // Helper endpoint for frontend state
     Route::get('/user-context', UserContextController::class);
@@ -43,5 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->load('roles', 'permissions');
 });
+
+Route::middleware('auth:sanctum')->post('/user', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
