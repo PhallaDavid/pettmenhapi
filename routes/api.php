@@ -2,58 +2,91 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\UserContextController;
+use App\Http\Controllers\Api\DiseaseCategoryController;
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\SettingController;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| Here is where you can register API routes for your application.
+| These routes are loaded by the RouteServiceProvider within the "api" middleware group.
 |
 */
 
-Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+// Public route
+Route::post('/login', [AuthController::class, 'login']);
 
+// Routes protected by sanctum auth
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
 
-    // User CRUD (Admin)
-    Route::apiResource('users', App\Http\Controllers\Api\UserController::class);
-    Route::post('users/{user}', [App\Http\Controllers\Api\UserController::class, 'update']);
-    
-    // Patients Management
-    Route::apiResource('patients', App\Http\Controllers\Api\PatientController::class);
-    Route::get('/dashboard/stats', [App\Http\Controllers\Api\DashboardController::class, 'stats']);
-    
-    // User Settings & Profile
-    Route::post('/user/preferences', [App\Http\Controllers\Api\DashboardController::class, 'updatePreferences']);
-    Route::get('/profile', [App\Http\Controllers\Api\AuthController::class, 'profile']);
-    Route::post('/profile', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
-    Route::put('/change-password', [App\Http\Controllers\Api\AuthController::class, 'changePassword']);
+    // Auth
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::post('/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/change-password', [AuthController::class, 'changePassword']);
 
-    // Helper endpoint for frontend state
+    // Users
+    Route::apiResource('users', UserController::class);
+    Route::post('users/{user}', [UserController::class, 'update']);
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
+    Route::put('users/{id}/roles', [UserRoleController::class, 'update']);
+
+    // Patients
+    Route::apiResource('patients', PatientController::class);
+
+    // Disease categories
+    Route::apiResource('disease-categories', DiseaseCategoryController::class);
+
+    // Employees
+    Route::apiResource('employees', EmployeeController::class);
+    Route::post('employees/{employee}/activate', [EmployeeController::class, 'activate']);
+    Route::post('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate']);
+
+    // Attendance
+    Route::get('attendances', [AttendanceController::class, 'index']);
+    Route::post('employees/{employee}/check-in', [AttendanceController::class, 'checkIn']);
+    Route::post('employees/{employee}/check-out', [AttendanceController::class, 'checkOut']);
+    Route::put('attendances/{attendance}', [AttendanceController::class, 'update']);
+    Route::get('employees/{employee}/attendance', [AttendanceController::class, 'byEmployeeMonth']);
+
+    // Salaries
+    Route::get('salaries', [SalaryController::class, 'history']);
+    Route::get('salaries/{salary}', [SalaryController::class, 'show']);
+    Route::put('salaries/{salary}', [SalaryController::class, 'update']);
+    Route::post('employees/{employee}/generate-salary', [SalaryController::class, 'generate']);
+    Route::get('salaries/{salary}/slip', [SalaryController::class, 'slip']);
+
+    // Settings
+    Route::get('settings', [SettingController::class, 'index']);
+    Route::put('settings', [SettingController::class, 'update']);
+
+    // Dashboard
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::post('/user/preferences', [DashboardController::class, 'updatePreferences']);
+
+    // User context
     Route::get('/user-context', UserContextController::class);
 
-    // Roles Management
+    // Roles & permissions
     Route::apiResource('roles', RoleController::class);
-    // Specific endpoint to assign permissions to a role
     Route::post('roles/{role}/permissions', [RoleController::class, 'assignPermissions']);
-
-    // Permissions Management
     Route::apiResource('permissions', PermissionController::class);
-
-    // Assign Roles to Users
-    Route::put('users/{id}/roles', [UserRoleController::class, 'update']);
 });
 
+// Shortcut to get current user with roles & permissions
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user()->load('roles', 'permissions');
 });
-
-Route::middleware('auth:sanctum')->post('/user', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);

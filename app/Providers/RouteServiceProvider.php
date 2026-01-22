@@ -7,6 +7,7 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Role;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,13 @@ class RouteServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->configureRateLimiting();
+
+        // Configure route model binding for Role to use guard_name
+        Route::bind('role', function ($value) {
+            return Role::where('id', $value)
+                ->where('guard_name', 'web')
+                ->firstOrFail();
+        });
 
         $this->routes(function () {
             Route::prefix('api')

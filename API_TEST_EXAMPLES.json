@@ -1,0 +1,272 @@
+{
+  "base_url": "http://127.0.0.1:8000/api",
+  "authentication": {
+    "login": {
+      "endpoint": "POST /login",
+      "request": {
+        "email": "david@gmail.com",
+        "password": "12345678"
+      },
+      "response": {
+        "success": true,
+        "access_token": "1|xxxxxxxxxxxx",
+        "token_type": "Bearer",
+        "user": {
+          "id": 1,
+          "name": "Super Admin",
+          "email": "david@gmail.com"
+        }
+      }
+    }
+  },
+  "employees": {
+    "create": {
+      "endpoint": "POST /employees",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phone": "1234567890",
+        "position": "Developer",
+        "base_salary": 5000,
+        "working_days": 26,
+        "overtime_rate": 25,
+        "status": "active"
+      },
+      "response": {
+        "success": true,
+        "message": "Employee created successfully",
+        "employee": {
+          "id": 1,
+          "name": "John Doe",
+          "email": "john@example.com",
+          "phone": "1234567890",
+          "position": "Developer",
+          "base_salary": "5000.00",
+          "working_days": 26,
+          "salary_per_day": "192.31",
+          "overtime_rate": "25.00",
+          "status": "active"
+        }
+      }
+    },
+    "list": {
+      "endpoint": "GET /employees",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "view": {
+      "endpoint": "GET /employees/1",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "update": {
+      "endpoint": "PUT /employees/1",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "name": "John Doe Updated",
+        "position": "Senior Developer",
+        "base_salary": 6000
+      }
+    },
+    "activate": {
+      "endpoint": "POST /employees/1/activate",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "deactivate": {
+      "endpoint": "POST /employees/1/deactivate",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    }
+  },
+  "attendance": {
+    "check_in": {
+      "endpoint": "POST /employees/1/check-in",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      },
+      "request": {},
+      "response": {
+        "success": true,
+        "message": "Check-in successful",
+        "attendance": {
+          "id": 1,
+          "employee_id": 1,
+          "date": "2026-01-22",
+          "check_in": "2026-01-22T09:15:00.000000Z",
+          "late_minutes": 15,
+          "status": "late"
+        }
+      }
+    },
+    "check_out": {
+      "endpoint": "POST /employees/1/check-out",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      },
+      "request": {},
+      "response": {
+        "success": true,
+        "message": "Check-out successful",
+        "attendance": {
+          "id": 1,
+          "check_out": "2026-01-22T18:30:00.000000Z",
+          "overtime_hours": "1.50",
+          "status": "present"
+        }
+      }
+    },
+    "list": {
+      "endpoint": "GET /attendances?employee_id=1&month=1&year=2026",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "by_employee_month": {
+      "endpoint": "GET /employees/1/attendance?month=1&year=2026",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "update": {
+      "endpoint": "PUT /attendances/1",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "check_in": "2026-01-22 09:00:00",
+        "check_out": "2026-01-22 17:00:00",
+        "status": "present"
+      }
+    }
+  },
+  "salaries": {
+    "generate": {
+      "endpoint": "POST /employees/1/generate-salary",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "month": 1,
+        "year": 2026
+      },
+      "response": {
+        "success": true,
+        "message": "Salary generated successfully",
+        "salary": {
+          "id": 1,
+          "employee_id": 1,
+          "month": 1,
+          "year": 2026,
+          "present_days": 20,
+          "absent_days": 2,
+          "leave_paid_days": 2,
+          "leave_unpaid_days": 1,
+          "late_days": 3,
+          "overtime_pay": "75.00",
+          "deduction": "250.00",
+          "bonus": "0.00",
+          "total_salary": "4825.00"
+        }
+      }
+    },
+    "history": {
+      "endpoint": "GET /salaries?employee_id=1&month=1&year=2026",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "view": {
+      "endpoint": "GET /salaries/1",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "update_bonus": {
+      "endpoint": "PUT /salaries/1",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "bonus": 500
+      }
+    },
+    "slip": {
+      "endpoint": "GET /salaries/1/slip",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      },
+      "response": {
+        "success": true,
+        "salary_slip": {
+          "employee": {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com",
+            "position": "Developer"
+          },
+          "period": {
+            "month": 1,
+            "year": 2026,
+            "month_name": "January"
+          },
+          "attendance_summary": {
+            "present_days": 20,
+            "absent_days": 2,
+            "leave_paid_days": 2,
+            "leave_unpaid_days": 1,
+            "late_days": 3
+          },
+          "salary_breakdown": {
+            "base_salary": "5000.00",
+            "overtime_pay": "75.00",
+            "bonus": "500.00",
+            "deduction": "250.00",
+            "total_salary": "5325.00"
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "get_all": {
+      "endpoint": "GET /settings",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      }
+    },
+    "update": {
+      "endpoint": "PUT /settings",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "settings": [
+          {
+            "key": "late_10_min_penalty",
+            "value": "7"
+          },
+          {
+            "key": "late_30_min_penalty",
+            "value": "15"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -15,6 +15,12 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
+     * The guard name for Spatie Permission.
+     * This ensures permissions are checked using 'web' guard even when authenticated via Sanctum.
+     */
+    protected $guard_name = 'web';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -55,7 +61,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $appends = ['avatar_url'];
+    // protected $appends = ['avatar_url'];
 
     /**
      * Get the user's avatar with full URL.

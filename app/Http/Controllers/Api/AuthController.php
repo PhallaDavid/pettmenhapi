@@ -17,19 +17,19 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => 'required|string',
         ]);
 
         $user = User::where('email', $request->email)->first();
-
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return response()->json([
+                'message' => 'Incorrect email or password',
+            ], 401);
         }
-
-        if (!$user->active) {
-            return response()->json(['message' => 'Your account is inactive.'], 403);
+        if (! $user->active) {
+            return response()->json([
+                'message' => 'Your account is inactive',
+            ], 403);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -39,15 +39,13 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user->load('roles', 'permissions'),
-            'domain' => url('/'),
-        ], 200, [], JSON_UNESCAPED_SLASHES);
+        ]);
     }
     public function profile(Request $request)
     {
         return response()->json([
             'success' => true,
             'user' => $request->user()->load('roles', 'permissions'),
-            'domain' => url('/'),
         ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 
@@ -83,30 +81,33 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Profile updated successfully',
             'user' => $user->load('roles', 'permissions'),
-            'domain' => url('/'),
         ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function changePassword(Request $request)
     {
         $request->validate([
-            'old_password' => 'required',
+            'old_password' => 'required|string',
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         $user = $request->user();
-
-        if (!Hash::check($request->old_password, $user->password)) {
-            throw ValidationException::withMessages([
-                'old_password' => ['The provided password does not match your current password.'],
-            ]);
+        if (! Hash::check($request->old_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Old password is incorrect',
+            ], 422);
         }
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
 
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        return response()->json(['message' => 'Password changed successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully',
+        ], 200);
     }
+
 
     public function logout(Request $request)
     {
