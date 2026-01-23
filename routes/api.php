@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,15 @@ use App\Http\Controllers\Api\SettingController;
 */
 
 // Public route
+Route::get('/time-check', function () {
+    return response()->json([
+        'success' => true,
+        'current_time_cambodia' => \Carbon\Carbon::now('Asia/Phnom_Penh')->toDateTimeString(),
+        'timezone' => config('app.timezone'),
+        'server_time' => now()->toDateTimeString(),
+    ]);
+});
+
 Route::post('/login', [AuthController::class, 'login']);
 
 // Routes protected by sanctum auth
@@ -50,6 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Disease categories
     Route::apiResource('disease-categories', DiseaseCategoryController::class);
 
+    // Checkouts
+    Route::apiResource('checkouts', CheckoutController::class);
+
     // Employees
     Route::apiResource('employees', EmployeeController::class);
     Route::post('employees/{employee}/activate', [EmployeeController::class, 'activate']);
@@ -57,9 +70,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Attendance
     Route::get('attendances', [AttendanceController::class, 'index']);
+    Route::get('attendances/stats', [AttendanceController::class, 'overallStats']);
+    Route::post('attendances/scan', [AttendanceController::class, 'scanQr']);
+    Route::post('attendances/scan-office', [AttendanceController::class, 'scanCompanyQr']);
     Route::post('employees/{employee}/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('employees/{employee}/check-out', [AttendanceController::class, 'checkOut']);
     Route::put('attendances/{attendance}', [AttendanceController::class, 'update']);
+    Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy']);
+    Route::get('my-attendance', [AttendanceController::class, 'myAttendance']);
+    Route::get('my-attendance/stats', [AttendanceController::class, 'myStats']);
     Route::get('employees/{employee}/attendance', [AttendanceController::class, 'byEmployeeMonth']);
 
     // Salaries
@@ -72,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Settings
     Route::get('settings', [SettingController::class, 'index']);
     Route::put('settings', [SettingController::class, 'update']);
+    Route::post('settings/telegram', [SettingController::class, 'updateTelegram']);
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);

@@ -57,4 +57,33 @@ class SettingController extends Controller
             'settings' => Setting::all()
         ]);
     }
+
+    /**
+     * Update Telegram settings
+     */
+    public function updateTelegram(Request $request)
+    {
+        // Check permission
+        if (!$request->user()->can('manage settings')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to manage settings',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'bot_token' => 'required|string',
+            'attendance_chat_id' => 'required|string',
+            'checkout_chat_id' => 'required|string',
+        ]);
+
+        Setting::setValue('telegram_bot_token', $validated['bot_token']);
+        Setting::setValue('telegram_attendance_chat_id', $validated['attendance_chat_id']);
+        Setting::setValue('telegram_checkout_chat_id', $validated['checkout_chat_id']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Telegram settings updated successfully'
+        ]);
+    }
 }

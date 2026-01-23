@@ -41,6 +41,7 @@ class EmployeeController extends Controller
             'working_days' => 'nullable|integer|min:1|max:31',
             'overtime_rate' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:active,inactive',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         $employee = Employee::create($validated);
@@ -89,6 +90,7 @@ class EmployeeController extends Controller
             'working_days' => 'nullable|integer|min:1|max:31',
             'overtime_rate' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:active,inactive',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         $employee->update($validated);

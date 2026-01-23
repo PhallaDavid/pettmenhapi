@@ -15,38 +15,71 @@ class PatientController extends Controller
      */
 
 
-    public function index()
+    public function index(Request $request)
     {
-        $patients = Patient::paginate(10);
+        $query = Patient::with(['diseaseCategory', 'employee:id,name,position']);
+
+        // Search by registration date (created_at)
+        if ($request->has('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        // Search by next visit date
+        if ($request->has('date_come_again')) {
+            $query->whereDate('date_come_again', $request->date_come_again);
+        }
+
+        // Search by date range
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        }
+
+        $patients = $query->latest()->paginate(10);
         return response()->json($patients, 200, [], JSON_UNESCAPED_SLASHES);
     }
 
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'date_of_birth' => 'nullable|date',
+            'fullname' => 'required|string|max:255',
+            'age' => 'nullable|integer',
             'gender' => 'nullable|string',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|unique:patients,email',
+            'old' => 'nullable|boolean',
+            'phone_number' => 'nullable|string|max:20',
+            'select_disease' => 'nullable|exists:disease_categories,id',
+            'select_employee' => 'nullable|exists:employees,id',
             'address' => 'nullable|string',
-            'medical_history' => 'nullable|string',
-            'emergency_contact_name' => 'nullable|string|max:255',
-            'emergency_contact_phone' => 'nullable|string|max:20',
+            'date_come_again' => 'nullable|date',
+            'status' => 'nullable|string',
         ]);
 
-        $patient = Patient::create($validatedData);
+        // Map input to database fields
+        $data = $validatedData;
+        if (isset($data['old'])) {
+            $data['is_old_patient'] = $data['old'];
+            unset($data['old']);
+        }
+        if (isset($data['select_disease'])) {
+            $data['disease_category_id'] = $data['select_disease'];
+            unset($data['select_disease']);
+        }
+        if (isset($data['select_employee'])) {
+            $data['employee_id'] = $data['select_employee'];
+            unset($data['select_employee']);
+        }
+
+        $patient = Patient::create($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Patient created successfully',
-            'patient' => $patient
+            'patient' => $patient->load(['diseaseCategory', 'employee:id,name,position'])
         ], 201);
     }
 
     public function show($id)
     {
-        $patient = Patient::findOrFail($id);
+        $patient = Patient::with(['diseaseCategory', 'employee:id,name,position'])->findOrFail($id);
         return response()->json([
             'success' => true,
             'patient' => $patient
@@ -58,23 +91,39 @@ class PatientController extends Controller
         $patient = Patient::findOrFail($id);
 
         $validatedData = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'date_of_birth' => 'nullable|date',
+            'fullname' => 'sometimes|required|string|max:255',
+            'age' => 'nullable|integer',
             'gender' => 'nullable|string',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|unique:patients,email,' . $id,
+            'old' => 'nullable|boolean',
+            'phone_number' => 'nullable|string|max:20',
+            'select_disease' => 'nullable|exists:disease_categories,id',
+            'select_employee' => 'nullable|exists:employees,id',
             'address' => 'nullable|string',
-            'medical_history' => 'nullable|string',
-            'emergency_contact_name' => 'nullable|string|max:255',
-            'emergency_contact_phone' => 'nullable|string|max:20',
+            'date_come_again' => 'nullable|date',
+            'status' => 'nullable|string',
         ]);
 
-        $patient->update($validatedData);
+        // Map input to database fields
+        $data = $validatedData;
+        if (isset($data['old'])) {
+            $data['is_old_patient'] = $data['old'];
+            unset($data['old']);
+        }
+        if (isset($data['select_disease'])) {
+            $data['disease_category_id'] = $data['select_disease'];
+            unset($data['select_disease']);
+        }
+        if (isset($data['select_employee'])) {
+            $data['employee_id'] = $data['select_employee'];
+            unset($data['select_employee']);
+        }
+
+        $patient->update($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Patient updated successfully',
-            'patient' => $patient
+            'patient' => $patient->load(['diseaseCategory', 'employee:id,name,position'])
         ]);
     }
 

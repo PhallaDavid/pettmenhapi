@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Models\Setting;
 
 class Attendance extends Model
 {
@@ -21,7 +22,7 @@ class Attendance extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
         'late_minutes' => 'integer',
@@ -38,7 +39,7 @@ class Attendance extends Model
 
     /**
      * Calculate late minutes based on check-in time
-     * Assuming work starts at 9:00 AM
+     * Using dynamic work start time from settings
      */
     public function calculateLateMinutes()
     {
@@ -46,10 +47,20 @@ class Attendance extends Model
             return 0;
         }
 
-        $workStartTime = Carbon::parse($this->date->format('Y-m-d') . ' 09:00:00');
-        $checkInTime = Carbon::parse($this->check_in);
+        // Get work start time from settings (default 09:00)
+        $workStartConfig = Setting::getValue('work_start_time', '09:00');
+        $lateThreshold = (int) Setting::getValue('late_threshold_minutes', 0);
+        
+        // Ensure we're working with Cambodia timezone
+        $dateStr = Carbon::parse($this->date)->toDateString();
+        $workStartTime = Carbon::parse($dateStr . ' ' . $workStartConfig, 'Asia/Phnom_Penh');
+        
+        // Add threshold to work start time
+        $lateStartTime = $workStartTime->copy()->addMinutes($lateThreshold);
+        
+        $checkInTime = Carbon::parse($this->check_in)->setTimezone('Asia/Phnom_Penh');
 
-        if ($checkInTime->greaterThan($workStartTime)) {
+        if ($checkInTime->greaterThan($lateStartTime)) {
             $this->late_minutes = $checkInTime->diffInMinutes($workStartTime);
         } else {
             $this->late_minutes = 0;
@@ -60,7 +71,7 @@ class Attendance extends Model
 
     /**
      * Calculate overtime hours based on check-out time
-     * Assuming work ends at 5:00 PM (8 hours)
+     * Using dynamic work end time from settings
      */
     public function calculateOvertimeHours()
     {
@@ -68,17 +79,22 @@ class Attendance extends Model
             return 0;
         }
 
-        $workEndTime = Carbon::parse($this->date->format('Y-m-d') . ' 17:00:00');
-        $checkOutTime = Carbon::parse($this->check_out);
+        // Get work end time from settings (default 17:00)
+        $workEndConfig = Setting::getValue('work_end_time', '17:00');
+
+        // Ensure we're working with Cambodia timezone
+        $dateStr = Carbon::parse($this->date)->toDateString();
+        $workEndTime = Carbon::parse($dateStr . ' ' . $workEndConfig, 'Asia/Phnom_Penh');
+        $checkOutTime = Carbon::parse($this->check_out)->setTimezone('Asia/Phnom_Penh');
 
         if ($checkOutTime->greaterThan($workEndTime)) {
             $overtimeMinutes = $checkOutTime->diffInMinutes($workEndTime);
-            $this->overtime_hours = round($overtimeMinutes / 60, 2);
+            $this->overtime_hours = (string) round($overtimeMinutes / 60, 2);
         } else {
-            $this->overtime_hours = 0;
+            $this->overtime_hours = "0.00";
         }
 
-        return $this->overtime_hours;
+        return (float) $this->overtime_hours;
     }
 
     /**
