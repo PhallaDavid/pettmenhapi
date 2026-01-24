@@ -20,7 +20,7 @@ class TelegramService
             return false;
         }
 
-        if (!$chatId || $chatId === 'YOUR_ATTENDANCE_CHAT_ID' || $chatId === 'YOUR_CHECKOUT_CHAT_ID') {
+        if (!$chatId || $chatId === 'YOUR_ATTENDANCE_CHAT_ID' || $chatId === 'YOUR_CHECKOUT_CHAT_ID' || $chatId === 'YOUR_LEAVE_CHAT_ID') {
             Log::warning('Telegram Chat ID not configured.');
             return false;
         }
@@ -100,6 +100,50 @@ class TelegramService
         $message .= "*Status:* {$statusEmoji} " . strtoupper($checkout->status) . "\n";
         $message .= "*Method:* " . strtoupper($checkout->payment_method) . "\n";
         $message .= "*Time:* {$time}\n";
+
+        return self::sendMessage($chatId, $message);
+    }
+
+    /**
+     * Send Leave Alert
+     */
+    public static function sendLeaveAlert($leaveRequest, $type = 'new')
+    {
+        $chatId = Setting::getValue('telegram_leave_chat_id');
+        $user = $leaveRequest->user;
+        $category = $leaveRequest->category;
+        
+        $startDate = \Carbon\Carbon::parse($leaveRequest->start_date)->format('d-M-Y');
+        $endDate = \Carbon\Carbon::parse($leaveRequest->end_date)->format('d-M-Y');
+        $dateRange = ($startDate === $endDate) ? $startDate : "{$startDate} to {$endDate}";
+        
+        $createdAt = $leaveRequest->created_at->setTimezone('Asia/Phnom_Penh')->format('d-M-Y h:i A');
+
+        $typeName = ($type === 'new') ? '🆕 *New Leave Request*' : '🔄 *Leave Status Updated*';
+        $statusEmoji = $leaveRequest->status === 'approved' ? '✅' : ($leaveRequest->status === 'rejected' ? '❌' : '⏳');
+        $leaveType = str_replace('_', ' ', ucfirst($leaveRequest->leave_type));
+        
+        if ($leaveRequest->leave_type === 'custom' && $leaveRequest->start_time && $leaveRequest->end_time) {
+            $startTime = \Carbon\Carbon::parse($leaveRequest->start_time)->format('h:i A');
+            $endTime = \Carbon\Carbon::parse($leaveRequest->end_time)->format('h:i A');
+            $leaveType .= " ({$startTime} - {$endTime})";
+        }
+
+        $message = "{$typeName}\n\n";
+        $message .= "*Employee:* {$user->name}\n";
+        $message .= "*Date:* {$dateRange}\n";
+        $message .= "*Category:* " . ($category ? $category->name : 'N/A') . "\n";
+        $message .= "*Type:* {$leaveType}\n";
+        $message .= "*Status:* {$statusEmoji} " . strtoupper($leaveRequest->status) . "\n";
+        $message .= "*Reason:* {$leaveRequest->reason}\n";
+
+        if ($leaveRequest->review_note) {
+            $message .= "*Review Note:* {$leaveRequest->review_note}\n";
+        }
+
+        if ($type === 'new') {
+            $message .= "*Submitted At:* {$createdAt}\n";
+        }
 
         return self::sendMessage($chatId, $message);
     }

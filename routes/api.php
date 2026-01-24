@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\LeaveRequestController;
+use App\Http\Controllers\Api\LeaveCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,6 +106,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('roles', RoleController::class);
     Route::post('roles/{role}/permissions', [RoleController::class, 'assignPermissions']);
     Route::apiResource('permissions', PermissionController::class);
+
+    // Leave Requests
+    Route::get('leave-requests', [LeaveRequestController::class, 'index']);
+    Route::post('leave-requests', [LeaveRequestController::class, 'store']);
+    Route::get('leave-requests/{leave_request}', [LeaveRequestController::class, 'show']);
+    Route::post('leave-requests/{leave_request}/status', [LeaveRequestController::class, 'updateStatus']);
+    Route::apiResource('leave-categories', LeaveCategoryController::class);
 });
 
 // Shortcut to get current user with roles & permissions

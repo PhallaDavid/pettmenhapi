@@ -192,6 +192,12 @@ class AttendanceController extends Controller
             ->when($request->date, function ($query, $date) {
                 return $query->whereDate('date', $date);
             })
+            ->when($request->status, function ($query, $status) {
+                if ($status === 'missing') {
+                    return $query->whereNotNull('check_in')->whereNull('check_out');
+                }
+                return $query->where('status', $status);
+            })
             ->when($request->month && !$request->date, function ($query) use ($request) {
                 $month = $request->month;
                 $year = $request->year ?? now()->year;
@@ -230,7 +236,7 @@ class AttendanceController extends Controller
                 'date' => $today,
                 'check_in' => Carbon::now('Asia/Phnom_Penh'),
             ]);
-            
+
             $attendance->calculateLateMinutes();
             $attendance->determineStatus();
             $attendance->save();
@@ -251,7 +257,7 @@ class AttendanceController extends Controller
             $attendance->update([
                 'check_out' => Carbon::now('Asia/Phnom_Penh')
             ]);
-            
+
             $attendance->calculateOvertimeHours();
             $attendance->determineStatus();
             $attendance->save();
@@ -321,7 +327,7 @@ class AttendanceController extends Controller
                 'date' => $today,
                 'check_in' => Carbon::now('Asia/Phnom_Penh'),
             ]);
-            
+
             $attendance->calculateLateMinutes();
             $attendance->determineStatus();
             $attendance->save();
@@ -342,7 +348,7 @@ class AttendanceController extends Controller
             $attendance->update([
                 'check_out' => Carbon::now('Asia/Phnom_Penh')
             ]);
-            
+
             $attendance->calculateOvertimeHours();
             $attendance->determineStatus();
             $attendance->save();
@@ -436,6 +442,7 @@ class AttendanceController extends Controller
                 COUNT(CASE WHEN status = "late" THEN 1 END) as late_count,
                 COUNT(CASE WHEN status = "absent" THEN 1 END) as absent_count,
                 COUNT(CASE WHEN status IN ("leave_paid", "leave_unpaid") THEN 1 END) as leave_count,
+                COUNT(CASE WHEN check_in IS NOT NULL AND check_out IS NULL THEN 1 END) as missing_count,
                 SUM(late_minutes) as total_late_minutes,
                 SUM(overtime_hours) as total_overtime_hours
             ')
@@ -451,6 +458,7 @@ class AttendanceController extends Controller
                 'late' => (int)($stats->late_count ?? 0),
                 'absent' => (int)($stats->absent_count ?? 0),
                 'leave' => (int)($stats->leave_count ?? 0),
+                'missing' => (int)($stats->missing_count ?? 0),
                 'total_records' => (int)($stats->total_records ?? 0),
                 'total_late_minutes' => (int)($stats->total_late_minutes ?? 0),
                 'total_overtime_hours' => (float)($stats->total_overtime_hours ?? 0)
@@ -489,6 +497,7 @@ class AttendanceController extends Controller
                 COUNT(CASE WHEN status = "late" THEN 1 END) as late_count,
                 COUNT(CASE WHEN status = "absent" THEN 1 END) as absent_count,
                 COUNT(CASE WHEN status IN ("leave_paid", "leave_unpaid") THEN 1 END) as leave_count,
+                COUNT(CASE WHEN check_in IS NOT NULL AND check_out IS NULL THEN 1 END) as missing_count,
                 SUM(late_minutes) as total_late_minutes,
                 SUM(overtime_hours) as total_overtime_hours
             ')
@@ -504,6 +513,7 @@ class AttendanceController extends Controller
                 'late' => (int)($stats->late_count ?? 0),
                 'absent' => (int)($stats->absent_count ?? 0),
                 'leave' => (int)($stats->leave_count ?? 0),
+                'missing' => (int)($stats->missing_count ?? 0),
                 'total_records' => (int)($stats->total_records ?? 0),
                 'total_late_minutes' => (int)($stats->total_late_minutes ?? 0),
                 'total_overtime_hours' => (float)($stats->total_overtime_hours ?? 0)

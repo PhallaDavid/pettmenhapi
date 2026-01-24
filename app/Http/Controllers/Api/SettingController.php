@@ -75,11 +75,13 @@ class SettingController extends Controller
             'bot_token' => 'required|string',
             'attendance_chat_id' => 'required|string',
             'checkout_chat_id' => 'required|string',
+            'leave_chat_id' => 'required|string',
         ]);
 
         Setting::setValue('telegram_bot_token', $validated['bot_token']);
         Setting::setValue('telegram_attendance_chat_id', $validated['attendance_chat_id']);
         Setting::setValue('telegram_checkout_chat_id', $validated['checkout_chat_id']);
+        Setting::setValue('telegram_leave_chat_id', $validated['leave_chat_id']);
 
         return response()->json([
             'success' => true,
