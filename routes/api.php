@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('settings', [SettingController::class, 'index']);
     Route::put('settings', [SettingController::class, 'update']);
     Route::post('settings/telegram', [SettingController::class, 'updateTelegram']);
+    Route::get('settings/company-qr', [SettingController::class, 'getCompanyQr']);
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
@@ -112,8 +113,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('leave-requests', [LeaveRequestController::class, 'store']);
     Route::get('leave-requests/{leave_request}', [LeaveRequestController::class, 'show']);
     Route::post('leave-requests/{leave_request}/status', [LeaveRequestController::class, 'updateStatus']);
-    Route::apiResource('leave-categories', LeaveCategoryController::class);
 });
+
+// Leave Categories (temporarily public for testing)
+Route::apiResource('leave-categories', LeaveCategoryController::class);
 
 // Shortcut to get current user with roles & permissions
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

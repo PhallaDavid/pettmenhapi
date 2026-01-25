@@ -88,4 +88,19 @@ class SettingController extends Controller
             'message' => 'Telegram settings updated successfully'
         ]);
     }
+
+    /**
+     * Get company QR code URL
+     */
+    public function getCompanyQr(Request $request)
+    {
+        $token = Setting::getValue('company_attendance_qr', 'default-token');
+        $qrUrl = "https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=" . urlencode($token) . "&choe=UTF-8";
+
+        return response()->json([
+            'success' => true,
+            'qr_url' => $qrUrl,
+            'token' => $token
+        ]);
+    }
 }

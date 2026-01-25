@@ -56,6 +56,11 @@ class SettingSeeder extends Seeder
                 'description' => 'Telegram Group ID for Checkout Alerts'
             ],
             [
+                'key' => 'telegram_leave_chat_id',
+                'value' => 'YOUR_LEAVE_CHAT_ID',
+                'description' => 'Telegram Group ID for Leave Request Alerts'
+            ],
+            [
                 'key' => 'company_name',
                 'value' => 'Pett Menh Tomacheat',
                 'description' => 'Name of the company'

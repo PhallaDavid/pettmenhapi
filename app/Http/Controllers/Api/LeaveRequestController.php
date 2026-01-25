@@ -17,11 +17,14 @@ class LeaveRequestController extends Controller
     {
         $status = $request->query('status');
         $categoryId = $request->query('leave_category_id');
-        
+        $userId = $request->query('user_id');
+
         $query = LeaveRequest::with(['user:id,name,email', 'category', 'reviewer:id,name']);
 
         if (!$request->user()->can('view all leave requests')) {
             $query->where('user_id', $request->user()->id);
+        } elseif ($userId) {
+            $query->where('user_id', $userId);
         }
 
         if ($status) {
@@ -49,7 +52,7 @@ class LeaveRequestController extends Controller
             'leave_category_id' => 'required|exists:leave_categories,id',
             'leave_type' => 'required|in:full_day,morning,afternoon,custom',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'start_time' => 'required_if:leave_type,custom|nullable|date_format:H:i',
             'end_time' => 'required_if:leave_type,custom|nullable|date_format:H:i|after:start_time',
             'reason' => 'required|string',
@@ -59,6 +62,15 @@ class LeaveRequestController extends Controller
             'end_time.required_if' => 'End time is required for custom leave type',
             'end_time.after' => 'End time must be after start time',
         ]);
+
+        // Check if the selected category requires an end date
+        $category = \App\Models\LeaveCategory::find($validated['leave_category_id']);
+        if ($category && $category->requires_end_date && empty($validated['end_date'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'End date is required for ' . $category->name . ' category'
+            ], 422);
+        }
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {

@@ -14,5 +14,6 @@ class LeaveCategory extends Model
         'color',
         'icon',
         'requires_attachment',
+        'requires_end_date',
     ];
 }

@@ -26,11 +26,20 @@ class TelegramService
         }
 
         try {
-            $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => $chatId,
-                'text' => $message,
-                'parse_mode' => 'Markdown'
-            ]);
+            // Disable SSL verification for local development
+            if (app()->environment('local')) {
+                $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $chatId,
+                    'text' => $message,
+                    'parse_mode' => 'Markdown'
+                ]);
+            } else {
+                $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $chatId,
+                    'text' => $message,
+                    'parse_mode' => 'Markdown'
+                ]);
+            }
 
             return $response->successful();
         } catch (\Exception $e) {
@@ -112,17 +121,17 @@ class TelegramService
         $chatId = Setting::getValue('telegram_leave_chat_id');
         $user = $leaveRequest->user;
         $category = $leaveRequest->category;
-        
+
         $startDate = \Carbon\Carbon::parse($leaveRequest->start_date)->format('d-M-Y');
-        $endDate = \Carbon\Carbon::parse($leaveRequest->end_date)->format('d-M-Y');
-        $dateRange = ($startDate === $endDate) ? $startDate : "{$startDate} to {$endDate}";
-        
+        $endDate = $leaveRequest->end_date ? \Carbon\Carbon::parse($leaveRequest->end_date)->format('d-M-Y') : null;
+        $dateRange = (!$endDate || $startDate === $endDate) ? $startDate : "{$startDate} to {$endDate}";
+
         $createdAt = $leaveRequest->created_at->setTimezone('Asia/Phnom_Penh')->format('d-M-Y h:i A');
 
         $typeName = ($type === 'new') ? '🆕 *New Leave Request*' : '🔄 *Leave Status Updated*';
         $statusEmoji = $leaveRequest->status === 'approved' ? '✅' : ($leaveRequest->status === 'rejected' ? '❌' : '⏳');
         $leaveType = str_replace('_', ' ', ucfirst($leaveRequest->leave_type));
-        
+
         if ($leaveRequest->leave_type === 'custom' && $leaveRequest->start_time && $leaveRequest->end_time) {
             $startTime = \Carbon\Carbon::parse($leaveRequest->start_time)->format('h:i A');
             $endTime = \Carbon\Carbon::parse($leaveRequest->end_time)->format('h:i A');
